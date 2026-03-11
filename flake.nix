@@ -17,6 +17,7 @@
             # Node.js
             nodejs_22
             nodePackages.npm
+            pnpm
 
             # Python (for data pipeline)
             (python3.withPackages (ps: with ps; [

@@ -108,7 +108,7 @@ function layoutLocal(
   // Figures that both precede and follow get a node on each side
   const bothIds = new Set([...precedeIds].filter((id) => followIds.has(id)));
 
-  const precedes = figures.filter((f) => precedeIds.has(f.id));
+  const precedes = figures.filter((f) => precedeIds.has(f.id) && !bothIds.has(f.id));
   const follows = figures.filter((f) => followIds.has(f.id) && !bothIds.has(f.id));
   const bothFigures = figures.filter((f) => bothIds.has(f.id));
 
@@ -154,9 +154,7 @@ function layoutLocal(
           y += groupGap;
         }
       }
-      const nodeId = idSuffix
-        ? (bothIds.has(fig.id) ? `${fig.id}-${idSuffix}` : String(fig.id))
-        : String(fig.id);
+      const nodeId = idSuffix ? `${fig.id}-${idSuffix}` : String(fig.id);
       nodes.push({
         id: nodeId,
         type: "figure",
@@ -179,18 +177,15 @@ function layoutLocal(
   stackFigures(leftFigures, -400, "pre");
   stackFigures(rightFigures, 400, "fol");
 
-  // Remap edges so they point to the correct side's node
+  // Remap edges: precede edges use -pre source, follow edges use -fol target
   const remappedEdges = edges.map((e) => {
-    const newEdge = { ...e };
-    // Precede edge: source → center. If source is in both, use the -pre node
-    if (e.targetFigureId === centerFigureId && bothIds.has(e.sourceFigureId)) {
-      return { ...newEdge, _sourceNode: `${e.sourceFigureId}-pre` };
+    if (e.targetFigureId === centerFigureId && precedeIds.has(e.sourceFigureId)) {
+      return { ...e, _sourceNode: `${e.sourceFigureId}-pre` };
     }
-    // Follow edge: center → target. If target is in both, use the -fol node
-    if (e.sourceFigureId === centerFigureId && bothIds.has(e.targetFigureId)) {
-      return { ...newEdge, _targetNode: `${e.targetFigureId}-fol` };
+    if (e.sourceFigureId === centerFigureId && followIds.has(e.targetFigureId)) {
+      return { ...e, _targetNode: `${e.targetFigureId}-fol` };
     }
-    return newEdge;
+    return e;
   });
 
   return { nodes, edges: remappedEdges };

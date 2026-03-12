@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { eq, or, inArray } from "drizzle-orm";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
-import { dances, figures, figureEdges } from "@/db/schema";
+import { figures, figureEdges } from "@/db/schema";
 import { DanceGraph } from "@/components/graph/dance-graph";
 
 export default async function FigureGraphPage({
@@ -22,11 +23,6 @@ export default async function FigureGraphPage({
     .where(eq(figures.id, figureId));
 
   if (!figure) notFound();
-
-  const [dance] = await db
-    .select()
-    .from(dances)
-    .where(eq(dances.id, figure.danceId));
 
   // Get all edges involving this figure
   const edges = await db
@@ -75,12 +71,12 @@ export default async function FigureGraphPage({
           </div>
           <div className="flex gap-2">
             <Button asChild variant="outline">
-              <a href={`/dances/${danceSlug}/figures/${figureId}`}>
+              <Link href={`/dances/${danceSlug}/figures/${figureId}`}>
                 Back to Figure
-              </a>
+              </Link>
             </Button>
             <Button asChild variant="outline">
-              <a href={`/dances/${danceSlug}/graph`}>Full Graph</a>
+              <Link href={`/dances/${danceSlug}/graph`}>Full Graph</Link>
             </Button>
           </div>
         </div>
@@ -89,6 +85,7 @@ export default async function FigureGraphPage({
           danceSlug={danceSlug}
           figures={neighborFigures}
           edges={edges}
+          centerFigureId={figureId}
         />
       </div>
     </div>

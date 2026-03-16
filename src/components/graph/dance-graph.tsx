@@ -15,8 +15,7 @@ import {
   MarkerType,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import * as dagre from "@dagrejs/dagre";
-import { graphlib } from "@dagrejs/dagre";
+import { graphlib, layout as dagreLayout } from "@dagrejs/dagre";
 import { FigureNode, type FigureNodeData } from "./figure-node";
 
 const EDGE_COLOR = "#888";
@@ -227,7 +226,7 @@ function layoutFull(
   }
 
   // Run the layout algorithm
-  dagre.layout(g);
+  dagreLayout(g);
 
   // Extract the positioned nodes
   const nodes: Node<FigureNodeData>[] = [];

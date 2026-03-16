@@ -15,6 +15,8 @@ import {
   MarkerType,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import * as dagre from "@dagrejs/dagre";
+import { graphlib } from "@dagrejs/dagre";
 import { FigureNode, type FigureNodeData } from "./figure-node";
 
 const EDGE_COLOR = "#888";
@@ -193,38 +195,57 @@ function layoutLocal(
 
 function layoutFull(
   figures: GraphFigure[],
+  edges: GraphEdge[],
   danceSlug: string
 ): Node<FigureNodeData>[] {
-  const levels = ["student_teacher", "associate", "licentiate", "fellow"];
-  const grouped = new Map<string, GraphFigure[]>();
-  for (const level of levels) grouped.set(level, []);
+  // Create a new directed graph
+  const g = new graphlib.Graph();
+  g.setGraph({
+    rankdir: "TB", // Top to bottom layout
+    nodesep: 80,   // Horizontal separation between nodes
+    ranksep: 150,  // Vertical separation between ranks
+    marginx: 50,
+    marginy: 50,
+  });
+  g.setDefaultEdgeLabel(() => ({}));
+
+  // Add nodes to the graph
+  const nodeWidth = 180;
+  const nodeHeight = 60;
+
   for (const fig of figures) {
-    grouped.get(fig.level)?.push(fig);
+    g.setNode(String(fig.id), {
+      width: nodeWidth,
+      height: nodeHeight,
+      label: fig.name,
+    });
   }
 
+  // Add edges to the graph
+  for (const edge of edges) {
+    g.setEdge(String(edge.sourceFigureId), String(edge.targetFigureId));
+  }
+
+  // Run the layout algorithm
+  dagre.layout(g);
+
+  // Extract the positioned nodes
   const nodes: Node<FigureNodeData>[] = [];
-  const xGap = 220;
-  const yGap = 150;
-
-  let y = 0;
-  for (const level of levels) {
-    const group = grouped.get(level) ?? [];
-    if (group.length === 0) continue;
-
-    const totalWidth = group.length * xGap;
-    let x = -totalWidth / 2;
-
-    for (const fig of group) {
+  g.nodes().forEach((nodeId: string) => {
+    const graphNode = g.node(nodeId);
+    const fig = figures.find((f) => String(f.id) === nodeId);
+    if (fig) {
       nodes.push({
-        id: String(fig.id),
+        id: nodeId,
         type: "figure",
-        position: { x, y },
+        position: {
+          x: graphNode.x - nodeWidth / 2,
+          y: graphNode.y - nodeHeight / 2,
+        },
         data: makeNodeData(fig, danceSlug),
       });
-      x += xGap;
     }
-    y += yGap;
-  }
+  });
 
   return nodes;
 }
@@ -285,7 +306,7 @@ export function DanceGraph({ danceSlug, figures, edges, centerFigureId }: DanceG
       const local = layoutLocal(filteredFigures, filteredEdges, centerFigureId, danceSlug);
       return { computedNodes: local.nodes, computedEdges: buildEdges(local.edges) };
     }
-    return { computedNodes: layoutFull(filteredFigures, danceSlug), computedEdges: buildEdges(filteredEdges) };
+    return { computedNodes: layoutFull(filteredFigures, filteredEdges, danceSlug), computedEdges: buildEdges(filteredEdges) };
   }, [filteredFigures, filteredEdges, centerFigureId, danceSlug]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(computedNodes);
@@ -320,22 +341,27 @@ export function DanceGraph({ danceSlug, figures, edges, centerFigureId }: DanceG
           className="!bg-card !border-border"
           maskColor="rgba(0,0,0,0.7)"
         />
-        <Panel position="top-right" className="flex gap-2">
-          {TOGGLE_CONFIG.map(({ key, label, color }) => (
-            <button
-              key={key}
-              onClick={() => toggleLevel(key)}
-              className="px-3 py-1.5 rounded-md text-xs font-medium border-2 transition-all"
-              style={{
-                borderColor: color,
-                backgroundColor: enabledLevels[key] ? color : "transparent",
-                color: enabledLevels[key] ? "#000" : color,
-                opacity: enabledLevels[key] ? 1 : 0.5,
-              }}
-            >
-              {label}
-            </button>
-          ))}
+        <Panel position="top-right" className="flex flex-col gap-2">
+          <div className="bg-card/90 backdrop-blur-sm border border-border rounded-md p-2 shadow-lg">
+            <div className="text-xs font-medium text-muted-foreground mb-2 px-1">Filter Levels</div>
+            <div className="flex gap-2">
+              {TOGGLE_CONFIG.map(({ key, label, color }) => (
+                <button
+                  key={key}
+                  onClick={() => toggleLevel(key)}
+                  className="px-3 py-1.5 rounded-md text-xs font-medium border-2 transition-all"
+                  style={{
+                    borderColor: color,
+                    backgroundColor: enabledLevels[key] ? color : "transparent",
+                    color: enabledLevels[key] ? "#000" : color,
+                    opacity: enabledLevels[key] ? 1 : 0.5,
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
         </Panel>
       </ReactFlow>
     </div>

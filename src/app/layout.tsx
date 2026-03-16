@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import Link from "next/link";
-import { Providers } from "@/components/providers";
 import "./globals.css";
+import { RootLayoutClient } from "./layout-client";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -23,32 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${inter.variable} font-sans antialiased`}>
-        <Providers>
-          <div className="min-h-screen flex flex-col">
-            <header className="border-b border-border px-6 py-4">
-              <nav className="max-w-7xl mx-auto flex items-center justify-between">
-                <Link href="/" className="text-xl font-bold tracking-tight">
-                  Figure Graph
-                </Link>
-                <div className="flex items-center gap-6">
-                  <Link
-                    href="/dances"
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Dances
-                  </Link>
-                  <Link
-                    href="/routines"
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Routines
-                  </Link>
-                </div>
-              </nav>
-            </header>
-            <main className="flex-1">{children}</main>
-          </div>
-        </Providers>
+        <RootLayoutClient>{children}</RootLayoutClient>
       </body>
     </html>
   );

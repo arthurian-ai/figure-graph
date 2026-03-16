@@ -84,10 +84,14 @@ scripts/
 - **Dance listing page**: Shows all dances with figure counts, links to detail and graph views
 - **Dance detail page**: Lists all figures for a dance, sorted by figure number, with level badges (Bronze/Silver/Gold colors)
 - **Figure detail page**: Shows leader/follower step tables (tabbed), footwork/CBM/sway, notes, and precede/follow edge lists with links to neighbors
-- **Full dance graph view**: React Flow visualization of all figures in a dance, grouped by level in rows. Nodes show figure name with level-colored borders. Edges are uniform grey with arrows.
-- **Local figure graph view**: Center figure with glow effect, precedes stacked on left, follows stacked on right. Figures grouped by level within each side with extra spacing between groups. Figures appearing in both precede and follow sets get a node on each side.
+- **Full dance graph view**: React Flow visualization with Dagre hierarchical layout (top-to-bottom), level-grouped nodes with colored borders
+- **Local figure graph view**: Center figure with glow effect, precedes stacked on left, follows stacked on right. Figures grouped by level within each side with extra spacing between groups.
 - **Graph traversal**: Clicking a node in local graph view navigates to that node's local graph
 - **Level filter toggles**: Bronze/Silver/Gold toggle buttons to show/hide figures by exam level in both graph views
+- **Search and filter**: Search input on dance detail page filters figures by name; level toggles for filtering
+- **Authentication**: Clerk integration with OAuth (Google, GitHub, Apple, Microsoft)
+- **Routine builder**: Full drag-and-drop builder with @dnd-kit, searchable figure sidebar, wall segment selection, notes per entry
+- **User figure notes**: Personal notes on figure detail page with CRUD via tRPC mutations
 - **Client-side navigation**: All internal links use Next.js `<Link>` for SPA-like navigation
 - **Dark theme**: oklch-based color system with ISTD level colors — Bronze (#CD7F32), Silver (#C0C0C0), Gold (#FFD700)
 
@@ -99,99 +103,43 @@ scripts/
 
 ## Planned Features
 
-The following features should be implemented in order. Each feature should be developed on the main branch with detailed commit messages following conventional commit style (e.g., `feat:`, `fix:`, `refactor:`). After completing each feature, create a summary of changes and commit it.
+All features have been implemented! 🎉
 
-### 1. Full Graph View Layout Improvement
+The following features were completed in this iteration:
 
-**Priority**: High
-**Complexity**: Medium
+### 1. Full Graph View Layout Improvement ✅ COMPLETED
+- Replaced simple row-based layout with Dagre hierarchical layout (top-to-bottom)
+- Level grouping now visual via node colors, not spatial grouping
+- Edges route cleanly with reduced crossing
 
-The current full graph view uses a simple row-by-level layout that becomes unreadable for dances with many figures. Edges cross extensively and nodes overlap visually.
+### 2. Search and Filter on Figure List Pages ✅ COMPLETED
+- Added search input to dance detail page filtering figures by name
+- Added level filter toggles (Bronze/Silver/Gold) matching graph view style
+- Client-side filtering for instant feedback
 
-**Requirements**:
-- Replace the row-based layout with a more readable algorithm. Options to evaluate:
-  - Hierarchical/layered layout (e.g., Dagre or ELK.js) that respects edge direction
-  - Force-directed layout with level-based constraints
-  - Manual/saved positions that users can adjust and persist
-- Edges should be routable without excessive crossing
-- Level grouping should still be visually apparent (via node colors, not necessarily spatial grouping)
-- The graph should fit reasonably on screen with the fit-view option
-- Consider adding a legend for level colors
+### 3. Authentication (Clerk with OAuth) ✅ COMPLETED
+- Integrated @clerk/nextjs
+- Enabled OAuth: Google, GitHub, Apple, Microsoft
+- Added sign-in/sign-up buttons to navigation
+- Protected routine and note routes with middleware
+- User sync to `users` table on first sign-in
 
-**Key files**: `src/components/graph/dance-graph.tsx` (the `layoutFull` function)
+### 4. Routine Builder ✅ COMPLETED
+- Full drag-and-drop builder with @dnd-kit
+- Searchable figure sidebar
+- Drag-and-drop sequence reordering
+- Wall segment selection per entry (long1/short1/long2/short2)
+- Notes field per entry
+- tRPC mutations for save/update
 
-**Notes**: The `@xyflow/react` library supports custom layout algorithms. Dagre (`@dagrejs/dagre`) is a common choice for directed graph layouts in React Flow. ELK.js is more powerful but heavier.
+### 5. User Figure Notes ✅ COMPLETED
+- Added personal notes section to figure detail page
+- CRUD operations via tRPC mutations
+- Plaintext notes, authenticated users only
 
-### 2. Search and Filter on Figure List Pages
+---
 
-**Priority**: High
-**Complexity**: Low
-
-**Requirements**:
-- Add a search input to the dance detail page (`/dances/[dance]`) that filters figures by name as the user types
-- Add level filter toggles (Bronze/Silver/Gold) matching the graph view's toggle style
-- Filter should be client-side since all figures are already loaded via the server component
-- Consider making this a reusable component since it mirrors the graph toggle pattern
-
-**Key files**: `src/app/dances/[dance]/page.tsx`
-
-### 3. Authentication (Clerk with OAuth)
-
-**Priority**: High (blocks routines and user notes)
-**Complexity**: Medium
-
-**Requirements**:
-- Integrate Clerk for authentication (`@clerk/nextjs`)
-- Enable OAuth providers: Google, GitHub, and any other reasonable services Clerk supports easily (Apple, Microsoft)
-- Add sign-in/sign-up buttons to the header nav
-- Protect routine and note routes with Clerk middleware
-- On first sign-in, create a user record in the `users` table (sync Clerk user ID)
-- The `users` table already uses `text("id")` as PK, designed for Clerk's user ID format
-- Add `.env` variables: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`
-
-**Key files**: `src/app/layout.tsx` (wrap with ClerkProvider), `src/middleware.ts` (new, for route protection), `src/db/schema.ts` (users table already exists)
-
-**Notes**: Clerk's Next.js App Router integration uses `<ClerkProvider>` in the root layout and a `middleware.ts` file for protecting routes. See Clerk's Next.js quickstart docs.
-
-### 4. Routine Builder
-
-**Priority**: Medium (requires auth)
-**Complexity**: High
-
-**Requirements**:
-- Replace the placeholder routine pages with a functional drag-and-drop builder
-- User selects a dance, then adds figures from a searchable sidebar
-- Figures are ordered in a sequence — the UI should show the chain with edge validation (green check if the transition exists in figure_edges, warning if not)
-- Save/load routines via tRPC mutations (this is where tRPC gets used for writes)
-- Routine list page shows the user's saved routines
-- Each routine entry can optionally specify a wall segment and notes
-- Consider using `@dnd-kit/core` for drag-and-drop
-
-**Key files**:
-- `src/app/routines/page.tsx` (list)
-- `src/app/routines/new/page.tsx` (builder, needs full rewrite)
-- `src/app/routines/[id]/page.tsx` (view/edit)
-- `src/server/routers/routine.ts` (tRPC mutations)
-
-**Database**: The `routines` and `routine_entries` tables already exist in the schema.
-
-### 5. User Figure Notes
-
-**Priority**: Low
-**Complexity**: Low
-
-**Requirements**:
-- On the figure detail page, add a section for personal notes (below the precede/follow cards)
-- Authenticated users can add, edit, and delete their own notes
-- Notes are stored in the `figure_notes` table (already in schema)
-- Use tRPC mutations for CRUD operations
-- Notes should be plaintext (no rich text editor needed initially)
-
-**Key files**:
-- `src/app/dances/[dance]/figures/[id]/page.tsx` (add notes section)
-- `src/server/routers/figure.ts` (add note CRUD procedures)
-
-## Development Guidelines
+*Project Status: All planned features implemented as of 2026-03-16*
 
 - **Commits**: Use conventional commit messages (`feat:`, `fix:`, `refactor:`, `chore:`, `docs:`). Include a concise description of what changed and why. Multi-line bodies are encouraged for complex changes.
 - **Summary of changes**: After completing each feature, update this document's "Implemented" section and commit the update.

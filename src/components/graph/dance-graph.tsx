@@ -15,7 +15,7 @@ import {
   MarkerType,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { graphlib, layout as dagreLayout } from "@dagrejs/dagre";
+import * as dagre from "@dagrejs/dagre";
 import { FigureNode, type FigureNodeData } from "./figure-node";
 
 const EDGE_COLOR = "#888";
@@ -198,7 +198,7 @@ function layoutFull(
   danceSlug: string
 ): Node<FigureNodeData>[] {
   // Create a new directed graph
-  const g = new graphlib.Graph();
+  const g = new dagre.graphlib.Graph();
   g.setGraph({
     rankdir: "TB", // Top to bottom layout
     nodesep: 80,   // Horizontal separation between nodes
@@ -226,7 +226,7 @@ function layoutFull(
   }
 
   // Run the layout algorithm
-  dagreLayout(g);
+  dagre.layout(g);
 
   // Extract the positioned nodes
   const nodes: Node<FigureNodeData>[] = [];
